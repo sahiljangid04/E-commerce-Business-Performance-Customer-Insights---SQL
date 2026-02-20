@@ -24,20 +24,14 @@ WITH monthly_data AS (
 MOM AS (
     SELECT
         order_month,
-
-        -- Orders MoM
         (
             (current_month_total_orders - LAG(current_month_total_orders) OVER (ORDER BY order_month)) * 100.0
             / NULLIF(LAG(current_month_total_orders) OVER (ORDER BY order_month), 0)
         ) AS MOM_orders,
-
-        -- Revenue MoM
         (
             (current_total_revenue - LAG(current_total_revenue) OVER (ORDER BY order_month)) * 100.0
             / NULLIF(LAG(current_total_revenue) OVER (ORDER BY order_month), 0)
         ) AS MOM_revenue,
-
-        -- Negative growth flag
         CASE 
             WHEN (
                 (current_total_revenue - LAG(current_total_revenue) OVER (ORDER BY order_month)) * 100.0
