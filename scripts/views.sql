@@ -97,3 +97,50 @@ product_name
 FROM products;
 
 */
+
+/*
+CREATE VIEW customer_segmentation AS
+WITH customer_metrics AS (
+    SELECT 
+        customer_id,
+        COUNT(DISTINCT order_id) AS total_orders,
+        SUM(order_revenue) AS total_spent,
+        MAX(order_date) AS last_order_date,
+        MIN(order_date) AS first_order_date
+    FROM fact_orders
+    GROUP BY customer_id
+),
+
+segmented AS (
+    SELECT 
+        customer_id,
+        total_orders,
+        total_spent,
+        last_order_date,
+
+        -- New vs Returning
+        CASE 
+            WHEN total_orders = 1 THEN 'New'
+            ELSE 'Returning'
+        END AS customer_type,
+
+        -- Value Segmentation
+        CASE 
+            WHEN total_spent >= 10000 THEN 'High Value'
+            WHEN total_spent >= 5000 THEN 'Medium Value'
+            ELSE 'Low Value'
+        END AS value_segment,
+
+        -- Recency Segmentation
+        CASE 
+            WHEN DATEDIFF(DAY, last_order_date, GETDATE()) <= 30 THEN 'Active'
+            WHEN DATEDIFF(DAY, last_order_date, GETDATE()) <= 90 THEN 'At Risk'
+            ELSE 'Churned'
+        END AS lifecycle_segment
+
+    FROM customer_metrics
+)
+
+SELECT * FROM segmented;
+
+/*

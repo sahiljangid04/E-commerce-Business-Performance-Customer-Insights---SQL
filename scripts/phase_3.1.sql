@@ -61,4 +61,41 @@ GROUP BY FORMAT(fo.order_month , 'MMM')
 
 
 -- Average Order Value (AOV) Trend
+SELECT 
+    format(order_month , 'MMM') as month_name,
+    SUM(order_revenue) AS total_revenue,
+    (sum(order_revenue) / COUNT(distinct order_id) ) as AOV
+FROM fact_orders AS FO
+GROUP BY format(order_month , 'MMM')
 
+
+--  New vs Returning Customer Contribution to Growth
+SELECT c.customer_type, SUM(order_revenue) AS revenue
+FROM fact_orders f
+JOIN dbo.customer_segmentation c ON f.customer_id = c.customer_id
+GROUP BY c.customer_type
+
+
+--Growth Stability & Risk Signals
+SELECT 
+    *,
+    CASE	
+        WHEN mom_orders_change IS NULL THEN 'First month' 
+        WHEN mom_orders_change > 0 AND mom_revenue_change < 0 THEN 'Orders up, Revenue down'
+        WHEN mom_orders_change <= 0 AND mom_revenue_change > 0 THEN 'Revenue up, Orders flat/down' 
+    END AS growth_mismatch_type
+FROM (
+    SELECT 
+        order_month,no_of_orders, 
+        no_of_orders - LAG(no_of_orders) OVER(ORDER BY order_month) AS mom_orders_change, revenue,
+        revenue - LAG(revenue) OVER(ORDER BY order_month) AS mom_revenue_change
+    FROM(
+        SELECT 
+            order_month, COUNT(DISTINCT order_id) AS no_of_orders, 
+            SUM(order_revenue) AS revenue
+        FROM fact_orders
+GROUP BY order_month) AS t1) AS t2
+WHERE
+  (mom_orders_change > 0 AND mom_revenue_change < 0)
+   OR   
+  (mom_orders_change <= 0 AND mom_revenue_change > 0)
