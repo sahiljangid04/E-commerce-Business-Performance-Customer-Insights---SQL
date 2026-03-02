@@ -50,3 +50,15 @@ SELECT
     m.negative_growth_flag
 FROM MOM as m
 ORDER BY order_month;
+
+
+-- Seasonality & Patterns
+SELECT 
+    FORMAT(fo.order_month , 'MMM') as Month_Name,
+    COUNT(DISTINCT fo.order_id) as No_of_Orders
+from fact_orders as fo
+GROUP BY FORMAT(fo.order_month , 'MMM')
+
+
+-- Average Order Value (AOV) Trend
+
